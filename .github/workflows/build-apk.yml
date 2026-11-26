@@ -30,18 +30,6 @@ jobs:
         run: gradle assembleRelease --stacktrace
 
       - name: Sign Release APK
-        uses: r0adkll/sign-android-release@v1
-        id: sign_app
-        with:
-          releaseDirectory: app/build/outputs/apk/release
-          signingKeyBase64: ${{ secrets.SIGNING_KEY }}
-          alias: release
-          keyStorePassword: password
-          keyPassword: password
-        continue-on-error: true
-
-      - name: Sign with default debug keystore if no secret
-        if: steps.sign_app.outcome != 'success'
         run: |
           keytool -genkey -v -keystore release.keystore -alias release -keyalg RSA -keysize 2048 -validity 10000 -storepass password -keypass password -dname "CN=ReceiptsApp, OU=Dev, O=Receipts, L=NN, S=NN, C=RU"
           BUILD_TOOLS=$(ls -d $ANDROID_HOME/build-tools/* | sort -V | tail -n 1)
