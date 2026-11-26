@@ -13,6 +13,10 @@ jobs:
       - name: Checkout repository
         uses: actions/checkout@v4
 
+      - name: Fix AndroidManifest
+        run: |
+          python3 -c 'ns = "http://" + "://android.com"; xml = f"""<?xml version="1.0" encoding="utf-8"?>\n<manifest xmlns:android="{ns}">\n    <uses-permission android:name="android.permission.CAMERA" />\n    <uses-feature android:name="android.hardware.camera" android:required="false" />\n    <uses-feature android:name="android.hardware.camera.any" android:required="false" />\n    <application android:label="@string/app_name" android:icon="@mipmap/ic_launcher" android:roundIcon="@mipmap/ic_launcher" android:theme="@android:style/Theme.Material.Light.DarkActionBar" android:allowBackup="true">\n        <activity android:name=".MainActivity" android:exported="true">\n            <intent-filter>\n                <action android:name="android.intent.action.MAIN" />\n                <category android:name="android.intent.category.LAUNCHER" />\n            </intent-filter>\n        </activity>\n        <activity android:name=".ScanActivity" android:exported="false" android:theme="@android:style/Theme.Material.NoActionBar" />\n    </application>\n</manifest>\n"""; open("app/src/main/AndroidManifest.xml", "w").write(xml)'
+
       - name: Set up JDK 17
         uses: actions/setup-java@v4
         with:
