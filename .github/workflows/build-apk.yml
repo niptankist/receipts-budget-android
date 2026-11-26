@@ -26,11 +26,30 @@ jobs:
         with:
           gradle-version: '8.9'
 
-      - name: Build Debug APK
-        run: gradle assembleDebug --stacktrace
+      - name: Build Release APK
+        run: gradle assembleRelease --stacktrace
 
-      - name: Upload APK artifact
+      - name: Sign Release APK
+        uses: r0adkll/sign-android-release@v1
+        id: sign_app
+        with:
+          releaseDirectory: app/build/outputs/apk/release
+          signingKeyBase64: ${{ secrets.SIGNING_KEY }}
+          alias: release
+          keyStorePassword: password
+          keyPassword: password
+        continue-on-error: true
+
+      - name: Sign with default debug keystore if no secret
+        if: steps.sign_app.outcome != 'success'
+        run: |
+          keytool -genkey -v -keystore release.keystore -alias release -keyalg RSA -keysize 2048 -validity 10000 -storepass password -keypass password -dname "CN=ReceiptsApp, OU=Dev, O=Receipts, L=NN, S=NN, C=RU"
+          BUILD_TOOLS=$(ls -d $ANDROID_HOME/build-tools/* | sort -V | tail -n 1)
+          $BUILD_TOOLS/zipalign -v -p 4 app/build/outputs/apk/release/app-release-unsigned.apk app/build/outputs/apk/release/app-release-aligned.apk
+          $BUILD_TOOLS/apksigner sign --ks release.keystore --ks-key-alias release --ks-pass pass:password --key-pass pass:password --out app/build/outputs/apk/release/receipts-budget-v2.2.apk app/build/outputs/apk/release/app-release-aligned.apk
+
+      - name: Upload Signed Release APK
         uses: actions/upload-artifact@v4
         with:
-          name: receipts-budget-debug-apk
-          path: app/build/outputs/apk/debug/*.apk
+          name: receipts-budget-release-apk
+          path: app/build/outputs/apk/release/receipts-budget-v2.2.apk
